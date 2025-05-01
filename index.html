@@ -3,299 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IR Capital</title>
+    <title>Scraped Grid from Dataroma</title>
     <style>
-        body {
-            margin: 20px;
-            display: flex;
-			font-family: 'Arial', sans-serif;
-        }
-		input {
-			width: 110px;
-		}
-        #section1 {
-            width: 12%;
-            margin-right: 20px;
-			height: 650px;
-			overflow-y: scroll;
-            background-color: white;
-            text-align: center;
-            padding: 2px;
-		<!-- border-right: 1px solid #ddd; -->
-        }
-        #section2 {
-            width: 88%;
-            background-color: #f1f1f1;
-            border-radius: 5px;
-            padding: 2px;
-            <!-- margin-top: 20px; -->
-			height: auto;
-        }
-        .portfolio {
-            margin: 10px 0;
-            border: 1px solid #ccc;
-            padding: 2px;
-            border-radius: 5px;
-            background-color: white;
-        }
-        .collapsible {
-            cursor: pointer;
-            background-color: #f1f1f1;
-            color: black;
-		    font-family: 'Arial', sans-serif;
-		    font-weight:bold;
-            padding: 2px;
-            border: none;
-            text-align: left;
-            outline: none;
-            font-size: 13px;
-            border-radius: 5px;
+        table {
             width: 100%;
+            border-collapse: collapse;
         }
-        .content {
-            padding: 2px;
-            display: none;
-            overflow: hidden;
-            background-color: #f1f1f1;
-            border-radius: 5px;
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
             text-align: left;
-            font-size: 13px;
         }
-        .stock-list {
-            margin-top: 10px;
+        th {
+            background-color: #f2f2f2;
         }
-        .stock-item {
-            cursor: pointer;
-            color: black;
-            padding: 2px;
-            <!-- text-decoration: underline; -->
-        }
-		h1 {
-			font-family: 'Luminari', fantasy;
-		}
-		.stock-item:hover {
-			background-color: #ddd;
-		}
     </style>
 </head>
 <body>
-    <div id="section1">
-		<h1>IR Capital</h1>
-		<input type="text" id="portfolioName" placeholder="Add New Portfolio">
-		<button onclick="togglePortfolio()">+/-</button>
-		<h4>My Portfolio</h4>
-		<div id="portfolios"></div>
-    </div>
-	
-	<div id="section2"></div>
+    <h1>Scraped Grid from Dataroma</h1>
+    <table id="data-table">
+        <thead>
+            <tr id="table-headers">
+                <!-- Headers will be inserted here -->
+            </tr>
+        </thead>
+        <tbody id="table-body">
+            <!-- Rows will be inserted here -->
+        </tbody>
+    </table>
 
     <script>
-        document.addEventListener('DOMContentLoaded', loadPortfolios);	
-		let widget = null;
+        async function fetchData() {
+            const response = await fetch('https://www.dataroma.com/m/grid.php');
+            const text = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(text, 'text/html');
+            const gridTable = doc.querySelector('.grid');
 
-
-        function togglePortfolio() {
-            const portfolioName = document.getElementById('portfolioName').value;
-            const existingPortfolio = document.getElementById(portfolioName);
-
-            if (existingPortfolio) {
-                if (confirm(`Are you sure you want to delete the portfolio "${portfolioName}"?`)) {
-                    existingPortfolio.remove();
-                    savePortfolios();
-                }
-            } else if (portfolioName) {
-                const portfolioDiv = document.createElement('div');
-                portfolioDiv.className = 'portfolio';
-                portfolioDiv.id = portfolioName;
-
-                const collapsibleButton = document.createElement('button');
-                collapsibleButton.className = 'collapsible';
-                collapsibleButton.innerText = portfolioName;
-                collapsibleButton.onclick = function() {
-                    this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'block' ? 'none' : 'block';
-                };
-
-                const contentDiv = document.createElement('div');
-                contentDiv.className = 'content';
-
-                const stockInput = document.createElement('input');
-                stockInput.type = 'text';
-                stockInput.placeholder = 'Enter stock symbol';
-
-                const createStockButton = document.createElement('button');
-                createStockButton.innerText = '+/-';
-                createStockButton.onclick = function() {
-                    const stockSymbol = stockInput.value;
-                    const stockList = contentDiv.querySelector('.stock-list');
-                    const existingStockItem = Array.from(stockList.children).find(item => item.innerText === stockSymbol);
-
-                    if (existingStockItem) {
-                        if (confirm(`Are you sure you want to delete the stock symbol "${stockSymbol}"?`)) {
-                            existingStockItem.remove();
-                            savePortfolios();
-                        }
-                    } else if (stockSymbol) {
-                        const stockItem = document.createElement('div');
-                        stockItem.className = 'stock-item';
-                        stockItem.innerText = stockSymbol;
-                        stockItem.onclick = function() {
-                            plotChart(stockSymbol);
-                        };
-                        stockList.appendChild(stockItem);
-                        stockInput.value = '';
-                        savePortfolios();
-                    }
-                };
-
-                const stockList = document.createElement('div');
-                stockList.className = 'stock-list';
-
-                contentDiv.appendChild(stockInput);
-                contentDiv.appendChild(createStockButton);
-                contentDiv.appendChild(stockList);
-                portfolioDiv.appendChild(collapsibleButton);
-                portfolioDiv.appendChild(contentDiv);
-
-                document.getElementById('portfolios').appendChild(portfolioDiv);
-                document.getElementById('portfolioName').value = '';
-                savePortfolios();
-            }
-        }
-
-        function savePortfolios() {
-            const portfolios = {};
-            document.querySelectorAll('.portfolio').forEach(portfolio => {
-                const portfolioName = portfolio.id;
-                const stockSymbols = Array.from(portfolio.querySelectorAll('.stock-item')).map(item => item.innerText);
-                portfolios[portfolioName] = stockSymbols;
+            // Extract headers
+            const headers = Array.from(gridTable.querySelectorAll('th')).map(th => th.textContent);
+            const headerRow = document.getElementById('table-headers');
+            headers.forEach(header => {
+                const th = document.createElement('th');
+                th.textContent = header;
+                headerRow.appendChild(th);
             });
-            localStorage.setItem('portfolios', JSON.stringify(portfolios));
-        }
 
-        function loadPortfolios() {
-            const portfolios = JSON.parse(localStorage.getItem('portfolios')) || {};
-            for (const portfolioName in portfolios) {
-                const portfolioDiv = document.createElement('div');
-                portfolioDiv.className = 'portfolio';
-                portfolioDiv.id = portfolioName;
-
-                const collapsibleButton = document.createElement('button');
-                collapsibleButton.className = 'collapsible';
-                collapsibleButton.innerText = portfolioName;
-                collapsibleButton.onclick = function() {
-                    this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'block' ? 'none' : 'block';
-                };
-
-                const contentDiv = document.createElement('div');
-                contentDiv.className = 'content';
-
-                const stockInput = document.createElement('input');
-                stockInput.type = 'text';
-                stockInput.placeholder = 'Add New Symbol';
-
-                const createStockButton = document.createElement('button');
-                createStockButton.innerText = '+/-';
-                createStockButton.onclick = function() {
-                    const stockSymbol = stockInput.value;
-                    const stockList = contentDiv.querySelector('.stock-list');
-                    const existingStockItem = Array.from(stockList.children).find(item => item.innerText === stockSymbol);
-
-                    if (existingStockItem) {
-                        if (confirm(`Are you sure you want to delete the stock symbol "${stockSymbol}"?`)) {
-                            existingStockItem.remove();
-                            savePortfolios();
-                        }
-                    } else if (stockSymbol) {
-                        const stockItem = document.createElement('div');
-                        stockItem.className = 'stock-item';
-                        stockItem.innerText = stockSymbol;
-                        stockItem.onclick = function() {
-                            plotChart(stockSymbol);
-                        };
-                        stockList.appendChild(stockItem);
-                        stockInput.value = '';
-                        savePortfolios();
-                    }
-                };
-
-                const stockList = document.createElement('div');
-                stockList.className = 'stock-list';
-
-                portfolios[portfolioName].forEach(stockSymbol => {
-                    const stockItem = document.createElement('div');
-                    stockItem.className = 'stock-item';
-                    stockItem.innerText = stockSymbol;
-                    stockItem.onclick = function() {
-                        plotChart(stockSymbol);
-                    };
-                    stockList.appendChild(stockItem);
+            // Extract rows
+            const rows = Array.from(gridTable.querySelectorAll('tr')).slice(1);
+            const tableBody = document.getElementById('table-body');
+            rows.forEach(row => {
+                const tr = document.createElement('tr');
+                Array.from(row.querySelectorAll('td')).forEach(cell => {
+                    const td = document.createElement('td');
+                    td.textContent = cell.textContent;
+                    tr.appendChild(td);
                 });
-
-                contentDiv.appendChild(stockInput);
-                contentDiv.appendChild(createStockButton);
-                contentDiv.appendChild(stockList);
-                portfolioDiv.appendChild(collapsibleButton);
-                portfolioDiv.appendChild(contentDiv);
-
-                document.getElementById('portfolios').appendChild(portfolioDiv);
-            }
+                tableBody.appendChild(tr);
+            });
         }
-		
-		function plotChart(stockSymbol) {
-		  const ticker = stockSymbol; 
-		  
-		  if (widget) {
-			  widget.remove();
-		  }
-		  
-		  widget = new TradingView.widget({
-			"container_id": "section2",
-			"autosize": true,
-			"symbol": ticker,
-			"interval": "D",
-			"timezone": "Etc/UTC",
-			"theme": "light",
-			"style": "1",
-			"locale": "en",
-			"toolbar_bg": "#f1f3f6",
-			"enable_publishing": false,
-			//"hide_side_toolbar": false,
-			"allow_symbol_change": true,
-			"studies": [
-				{
-					id: "MASimple@tv-basicstudies",
-					inputs: { length: 50 }
-				},
-				{
-					id: "MASimple@tv-basicstudies",
-					inputs: { length: 100 }
-				},
-				{
-					id: "MASimple@tv-basicstudies",
-					inputs: { length: 150 }
-				},
-				{
-					id: "MASimple@tv-basicstudies",
-					inputs: { length: 200 }
-				},
-				{
-					id: "RSI@tv-basicstudies"
-				},
-				{
-					id: "MACD@tv-basicstudies"
-				}
-			],
-			"studies_overrides": {
-				"moving average.ma.color": "#2A2E39",
-				"moving average.ma.linewidth": 2,
-			},
-			"show_popup_button": true,
-			"popup_width": "1000",
-			"popup_height": "650"
-		  });
-		}
+
+        fetchData();
     </script>
-    <!-- <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> -->
-	<script src="https://s3.tradingview.com/tv.js"></script>
 </body>
 </html>
