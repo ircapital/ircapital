@@ -125,7 +125,7 @@
                 const createStockButton = document.createElement('button');
                 createStockButton.innerText = '+/-';
                 createStockButton.onclick = function() {
-                    const stockSymbol = stockInput.value;
+                    const stockSymbol = stockInput.value.toUpperCase();
                     const stockList = contentDiv.querySelector('.stock-list');
                     const existingStockItem = Array.from(stockList.children).find(item => item.innerText === stockSymbol);
 
@@ -196,7 +196,7 @@
                 const createStockButton = document.createElement('button');
                 createStockButton.innerText = '+/-';
                 createStockButton.onclick = function() {
-                    const stockSymbol = stockInput.value;
+                    const stockSymbol = stockInput.value.toUpperCase();
                     const stockList = contentDiv.querySelector('.stock-list');
                     const existingStockItem = Array.from(stockList.children).find(item => item.innerText === stockSymbol);
 
